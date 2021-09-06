@@ -1,7 +1,6 @@
 package com.kinnara.kecakplugins.directoryformbinder;
 
 import org.joget.apps.app.service.AppUtil;
-import org.joget.apps.form.dao.FormDataDao;
 import org.joget.apps.form.model.*;
 import org.joget.apps.form.service.FormUtil;
 import org.joget.directory.dao.RoleDao;
@@ -9,7 +8,9 @@ import org.joget.directory.model.Role;
 import org.joget.workflow.util.WorkflowUtil;
 import org.springframework.context.ApplicationContext;
 
-import java.util.*;
+import javax.annotation.Nullable;
+import java.util.Date;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 public class RoleDirectoryFormBinder extends FormBinder implements FormLoadElementBinder, FormStoreElementBinder, FormDataDeletableBinder {
@@ -53,23 +54,31 @@ public class RoleDirectoryFormBinder extends FormBinder implements FormLoadEleme
         final ApplicationContext applicationContext = AppUtil.getApplicationContext();
         final RoleDao roleDao = (RoleDao) applicationContext.getBean("roleDao");
 
-        final FormRowSet rowSet = new FormRowSet();
+        final Date now = new Date();
+        final String currentUser = WorkflowUtil.getCurrentUsername();
 
         Optional.ofNullable(originalRowSet)
                 .map(FormRowSet::stream)
                 .orElseGet(Stream::empty)
                 .findFirst()
                 .ifPresent(row -> {
-                    Date now = new Date();
-                    String currentUser = WorkflowUtil.getCurrentUsername();
+                    final String primaryKey = Optional.of(row)
+                            .map(FormRow::getId)
+                            .orElseGet(formData::getPrimaryKeyValue);
 
-                    Role role = roleDao.getRole(row.getId());
+                    @Nullable Role role = Optional.ofNullable(primaryKey)
+                            .map(roleDao::getRole)
+                            .orElse(null);
 
                     if(role == null) {
                         role = new Role();
                         role.setId(row.getId());
                         role.setName(row.getProperty("name"));
                         role.setDescription(row.getProperty("description"));
+                        role.setCreatedBy(currentUser);
+                        role.setDateCreated(now);
+                        role.setModifiedBy(currentUser);
+                        role.setDateModified(now);
                         role.setDeleted(false);
                         roleDao.addRole(role);
 
@@ -84,15 +93,13 @@ public class RoleDirectoryFormBinder extends FormBinder implements FormLoadEleme
                     }
 
                     row.setId(role.getId());
-                    row.setDateModified(now);
-                    row.setModifiedBy(currentUser);
+                    row.setDateModified(role.getDateModified());
+                    row.setModifiedBy(role.getModifiedBy());
                     row.setDateCreated(role.getDateCreated());
                     row.setCreatedBy(role.getCreatedBy());
-
-                    rowSet.add(row);
                 });
 
-        return rowSet;
+        return originalRowSet;
     }
 
     @Override
