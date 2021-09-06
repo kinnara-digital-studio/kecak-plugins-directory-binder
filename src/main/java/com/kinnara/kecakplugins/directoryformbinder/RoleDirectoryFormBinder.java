@@ -4,7 +4,6 @@ import org.joget.apps.app.service.AppUtil;
 import org.joget.apps.form.dao.FormDataDao;
 import org.joget.apps.form.model.*;
 import org.joget.apps.form.service.FormUtil;
-import org.joget.commons.util.LogUtil;
 import org.joget.directory.dao.RoleDao;
 import org.joget.directory.model.Role;
 import org.joget.workflow.util.WorkflowUtil;
@@ -22,15 +21,13 @@ public class RoleDirectoryFormBinder extends FormBinder implements FormLoadEleme
 
     @Override
     public String getTableName() {
-        Form form = FormUtil.findRootForm(getElement());
-        return form.getPropertyString(FormUtil.PROPERTY_TABLE_NAME);
+        return "dir_role";
     }
 
     @Override
     public FormRowSet load(Element element, String primaryKey, FormData formData) {
         final ApplicationContext applicationContext = AppUtil.getApplicationContext();
         final RoleDao roleDao = (RoleDao) applicationContext.getBean("roleDao");
-        final FormDataDao formDataDao = (FormDataDao) applicationContext.getBean("formDataDao");
 
         final FormRowSet rowSet = new FormRowSet();
 
@@ -41,17 +38,10 @@ public class RoleDirectoryFormBinder extends FormBinder implements FormLoadEleme
                     roleRow.setProperty("id", Optional.ofNullable(role.getId()).orElse(""));
                     roleRow.setProperty("name", Optional.ofNullable(role.getName()).orElse(""));
                     roleRow.setProperty("description", Optional.ofNullable(role.getDescription()).orElse(""));
-
-                    Optional.of(primaryKey)
-                            .map(s -> formDataDao.load(getFormId(), getTableName(), s))
-                            .map(FormRow::getCustomProperties)
-                            .map(Map::entrySet)
-                            .map(s -> (Set<Map.Entry<String, Object>>) s)
-                            .map(Collection::stream)
-                            .orElseGet(Stream::empty)
-                            .filter(e -> !roleRow.containsKey(e.getKey()))
-                            .forEach(e -> roleRow.setProperty(e.getKey(), String.valueOf(e.getValue())));
-
+                    roleRow.setProperty("createdBy", Optional.ofNullable(role.getCreatedBy()).orElse(""));
+                    roleRow.setProperty("modifiedBy", Optional.ofNullable(role.getModifiedBy()).orElse(""));
+                    roleRow.setProperty("dateCreated", Optional.ofNullable(role.getDateCreated()).map(Date::toString).orElse(""));
+                    roleRow.setProperty("dateModified", Optional.ofNullable(role.getDateModified()).map(Date::toString).orElse(""));
                     rowSet.add(roleRow);
                 });
 
@@ -62,7 +52,6 @@ public class RoleDirectoryFormBinder extends FormBinder implements FormLoadEleme
     public FormRowSet store(Element element, FormRowSet originalRowSet, FormData formData) {
         final ApplicationContext applicationContext = AppUtil.getApplicationContext();
         final RoleDao roleDao = (RoleDao) applicationContext.getBean("roleDao");
-        final FormDataDao formDataDao = (FormDataDao) applicationContext.getBean("formDataDao");
 
         final FormRowSet rowSet = new FormRowSet();
 
@@ -73,8 +62,8 @@ public class RoleDirectoryFormBinder extends FormBinder implements FormLoadEleme
                 .ifPresent(row -> {
                     Date now = new Date();
                     String currentUser = WorkflowUtil.getCurrentUsername();
-                    String primaryKey = row.getId();
-                    Role role = roleDao.getRole(primaryKey);
+
+                    Role role = roleDao.getRole(row.getId());
 
                     if(role == null) {
                         role = new Role();
@@ -100,11 +89,7 @@ public class RoleDirectoryFormBinder extends FormBinder implements FormLoadEleme
                     row.setDateCreated(role.getDateCreated());
                     row.setCreatedBy(role.getCreatedBy());
 
-                    row.remove("name");
-                    row.remove("description");
-
                     rowSet.add(row);
-                    formDataDao.saveOrUpdate(getFormId(), getTableName(), rowSet);
                 });
 
         return rowSet;
