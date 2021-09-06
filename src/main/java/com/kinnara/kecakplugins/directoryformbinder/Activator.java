@@ -14,7 +14,8 @@ public class Activator implements BundleActivator {
         registrationList = new ArrayList<ServiceRegistration>();
 
         //Register plugin here
-        //registrationList.add(context.registerService(MyPlugin.class.getName(), new MyPlugin(), null));
+        registrationList.add(context.registerService(UserDirectoryFormBinder.class.getName(), new UserDirectoryFormBinder(), null));
+        registrationList.add(context.registerService(OrganizationDirectoryFormBinder.class.getName(), new OrganizationDirectoryFormBinder(), null));
     }
 
     public void stop(BundleContext context) {
