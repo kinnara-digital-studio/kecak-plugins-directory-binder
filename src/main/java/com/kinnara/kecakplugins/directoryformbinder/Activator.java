@@ -19,6 +19,7 @@ public class Activator implements BundleActivator {
         registrationList.add(context.registerService(RoleDirectoryFormBinder.class.getName(), new RoleDirectoryFormBinder(), null));
 
         registrationList.add(context.registerService(RoleDirectoryDataListBinder.class.getName(), new RoleDirectoryDataListBinder(), null));
+        registrationList.add(context.registerService(UserDirectoryDataListBinder.class.getName(), new UserDirectoryDataListBinder(), null));
     }
 
     public void stop(BundleContext context) {
