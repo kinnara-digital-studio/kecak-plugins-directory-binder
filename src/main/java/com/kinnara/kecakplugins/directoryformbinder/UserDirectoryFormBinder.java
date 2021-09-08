@@ -118,6 +118,8 @@ public class UserDirectoryFormBinder extends FormBinder implements FormLoadEleme
                                 }
 							}
                         }
+                        user.setDateCreated(now);
+                        user.setCreatedBy(currentUser);
                         userDao.addUser(user);
 
                         row.setDateCreated(now);
