@@ -18,7 +18,7 @@ public class RoleDirectoryDataListBinder extends FormRowDataListBinder {
     public DataListCollection<Map<String, Object>> getData(DataList dataList, Map map, DataListFilterQueryObject[] dataListFilterQueryObjects, String sort, Boolean desc, Integer start, Integer rows) {
         ApplicationContext applicationContext = AppUtil.getApplicationContext();
         RoleDao roleDao = (RoleDao) applicationContext.getBean("roleDao");
-        return Optional.ofNullable(roleDao.getRoles("", sort, desc, start, rows))
+        return Optional.ofNullable(roleDao.getRoles(Optional.of("extraCondition").map(map::get).map(String::valueOf).orElse(""), sort, desc, start, rows))
                 .map(Collection::stream)
                 .orElseGet(Stream::empty)
                 .map(r -> {
@@ -39,7 +39,7 @@ public class RoleDirectoryDataListBinder extends FormRowDataListBinder {
     public int getDataTotalRowCount(DataList dataList, Map map, DataListFilterQueryObject[] dataListFilterQueryObjects) {
         ApplicationContext applicationContext = AppUtil.getApplicationContext();
         RoleDao roleDao = (RoleDao) applicationContext.getBean("roleDao");
-        return Math.toIntExact(roleDao.getTotalRoles(""));
+        return Math.toIntExact(roleDao.getTotalRoles(Optional.of("extraCondition").map(map::get).map(String::valueOf).orElse("")));
     }
 
     @Override

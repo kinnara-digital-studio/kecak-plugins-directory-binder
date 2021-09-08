@@ -19,7 +19,7 @@ public class UserDirectoryDataListBinder extends FormRowDataListBinder {
     public DataListCollection<Map<String, Object>> getData(DataList dataList, Map map, DataListFilterQueryObject[] dataListFilterQueryObjects, String sort, Boolean desc, Integer start, Integer rows) {
         ApplicationContext applicationContext = AppUtil.getApplicationContext();
         UserDao userDao = (UserDao) applicationContext.getBean("userDao");
-        return Optional.ofNullable(userDao.getUsers(dataListFilterQueryObjects.toString(), "", "", "", "", "", "", sort, desc, start, rows))
+        return Optional.ofNullable(userDao.getUsers(null, null, null, null, null, null, null, sort, desc, start, rows))
                 .map(Collection::stream)
                 .orElseGet(Stream::empty)
                 .map(r -> {
@@ -44,7 +44,7 @@ public class UserDirectoryDataListBinder extends FormRowDataListBinder {
     public int getDataTotalRowCount(DataList dataList, Map map, DataListFilterQueryObject[] dataListFilterQueryObjects) {
         ApplicationContext applicationContext = AppUtil.getApplicationContext();
         UserDao userDao = (UserDao) applicationContext.getBean("userDao");
-        return Math.toIntExact(userDao.getTotalUsers(dataListFilterQueryObjects.toString(), "", "", "", "", "", ""));
+        return Math.toIntExact(userDao.getTotalUsers(null, null, null, null, null, null, null));
     }
 
     @Override
