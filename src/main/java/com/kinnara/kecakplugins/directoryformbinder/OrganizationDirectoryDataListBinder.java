@@ -25,7 +25,7 @@ public class OrganizationDirectoryDataListBinder extends FormRowDataListBinder {
 
         final Optional<Form> optForm = Optional.ofNullable(getSelectedForm());
         final Set<String> ids = new HashSet<>();
-        final DataListCollection<Map<String, Object>> collect = Optional.ofNullable(organizationDao.findOrganizations(getCondition(map, ids), getArguments(map, ids), sort, desc, start, rows))
+        final DataListCollection<Map<String, Object>> collect = Optional.ofNullable(organizationDao.findOrganizations(getCondition(map), null, sort, desc, start, rows))
                 .map(Collection::stream)
                 .orElseGet(Stream::empty)
                 .map(org -> {
@@ -60,9 +60,7 @@ public class OrganizationDirectoryDataListBinder extends FormRowDataListBinder {
     public int getDataTotalRowCount(DataList dataList, Map map, DataListFilterQueryObject[] dataListFilterQueryObjects) {
         ApplicationContext applicationContext = AppUtil.getApplicationContext();
         OrganizationDao organizationDao = (OrganizationDao) applicationContext.getBean("organizationDao");
-
-        Set<String> ids = getIds(dataList, map, dataListFilterQueryObjects);
-        return Math.toIntExact(organizationDao.countOrganizations(getCondition(map, ids), getArguments(map, ids)));
+        return Math.toIntExact(organizationDao.countOrganizations(getCondition(map), null));
     }
 
     @Override
@@ -90,45 +88,13 @@ public class OrganizationDirectoryDataListBinder extends FormRowDataListBinder {
         return getClass().getName();
     }
 
-    protected String getCondition(Map properties, Set<String> ids) {
-        final String condition;
-
-        if(ids.isEmpty()) {
-            condition = "where 1 = 1";
-        } else {
-            condition = ids.stream().map(s -> "?").collect(Collectors.joining(",", "where id in (", ")"));
-        }
-
-        return condition + " and " + Optional.of("extraCondition")
+    protected String getCondition(Map properties) {
+        return Optional.of("extraCondition")
                 .map(properties::get)
                 .map(String::valueOf)
                 .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .map(s -> "where " + s)
                 .orElse("");
-    }
-
-    protected String[] getArguments(Map properties, Set<String> ids) {
-        if(ids.isEmpty()) {
-            return null;
-        } else {
-            return ids.stream().toArray(String[]::new);
-        }
-    }
-
-    protected Set<String> getIds(DataList dataList, Map map, DataListFilterQueryObject[] dataListFilterQueryObjects) {
-//        if(cacheIds.isEmpty()) {
-//            Set<String> ids = Optional.ofNullable(super.getData(dataList, map, dataListFilterQueryObjects, null, null, null, null))
-//                    .map(c -> (DataListCollection<Map<String, String>>)c)
-//                    .map(Collection::stream)
-//                    .orElseGet(Stream::empty)
-//                    .map(m -> m.get(getPrimaryKeyColumnName()))
-//                    .filter(Objects::nonNull)
-//                    .filter(s -> !s.isEmpty())
-//                    .collect(Collectors.toSet());
-//
-//            cacheIds.addAll(ids);
-//        }
-//
-//        return cacheIds;
-        return Collections.emptySet();
     }
 }
