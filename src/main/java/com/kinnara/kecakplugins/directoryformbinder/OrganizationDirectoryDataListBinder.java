@@ -4,7 +4,6 @@ import org.joget.apps.app.service.AppUtil;
 import org.joget.apps.datalist.lib.FormRowDataListBinder;
 import org.joget.apps.datalist.model.*;
 import org.joget.directory.dao.OrganizationDao;
-import org.joget.directory.dao.RoleDao;
 import org.springframework.context.ApplicationContext;
 
 import java.util.Collection;

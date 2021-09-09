@@ -1,31 +1,22 @@
 package com.kinnara.kecakplugins.directoryformbinder;
 
-import java.security.NoSuchAlgorithmException;
-import java.security.spec.InvalidKeySpecException;
 import java.util.Date;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.stream.Stream;
 
 import javax.annotation.Nullable;
 
 import org.joget.apps.app.service.AppUtil;
+import org.joget.apps.form.lib.DefaultFormBinder;
 import org.joget.apps.form.model.*;
 import org.joget.apps.form.service.FormUtil;
-import org.joget.commons.util.HashSalt;
-import org.joget.commons.util.LogUtil;
-import org.joget.commons.util.PasswordGeneratorUtil;
+import org.joget.commons.util.UuidGenerator;
 import org.joget.directory.dao.OrganizationDao;
-import org.joget.directory.dao.UserDao;
 import org.joget.directory.model.Organization;
-import org.joget.directory.model.User;
-import org.joget.directory.model.UserSalt;
-import org.joget.directory.model.service.DirectoryUtil;
-import org.joget.directory.model.service.UserSecurity;
 import org.joget.workflow.util.WorkflowUtil;
 import org.springframework.context.ApplicationContext;
 
-public class OrganizationDirectoryFormBinder extends FormBinder implements FormLoadElementBinder, FormStoreElementBinder, FormDataDeletableBinder {
+public class OrganizationDirectoryFormBinder extends DefaultFormBinder implements FormLoadElementBinder, FormStoreElementBinder, FormDataDeletableBinder {
     @Override
     public String getFormId() {
         Form form = FormUtil.findRootForm(getElement());
@@ -40,21 +31,27 @@ public class OrganizationDirectoryFormBinder extends FormBinder implements FormL
 
     @Override
     public FormRowSet load(Element element, String primaryKey, FormData formData) {
-    	final ApplicationContext applicationContext = AppUtil.getApplicationContext();
-        final OrganizationDao organizationDao = (OrganizationDao) applicationContext.getBean("organizationDao");
-        final FormRowSet results = new FormRowSet();
-        Optional.ofNullable(primaryKey)
-        .map(organizationDao::getOrganization)
-        .ifPresent(org -> {
-            FormRow row = new FormRow();
-			row.setId(org.getId());
-            row.setProperty("name", Optional.ofNullable(org.getName()).orElse(""));
-            row.setProperty("description", Optional.ofNullable(org.getDescription()).orElse(""));
-            row.setProperty("parentId", Optional.ofNullable(org.getParentId()).orElse(""));
+    	FormRowSet table = super.load(element, primaryKey, formData);
+    	
+    	if(table!=null && table.size()>0) {
+    		return table;
+    	}else {
+    		final ApplicationContext applicationContext = AppUtil.getApplicationContext();
+            final OrganizationDao organizationDao = (OrganizationDao) applicationContext.getBean("organizationDao");
+            final FormRowSet results = new FormRowSet();
+            Optional.ofNullable(primaryKey)
+            .map(organizationDao::getOrganization)
+            .ifPresent(org -> {
+                FormRow row = new FormRow();
+    			row.setId(org.getId());
+                row.setProperty("name", Optional.ofNullable(org.getName()).orElse(""));
+                row.setProperty("description", Optional.ofNullable(org.getDescription()).orElse(""));
+                row.setProperty("parentId", Optional.ofNullable(org.getParentId()).orElse(""));
 
-            results.add(row);
-        });
-        return results;
+                results.add(row);
+            });
+            return results;
+    	}
     }
 
     @Override
@@ -80,10 +77,16 @@ public class OrganizationDirectoryFormBinder extends FormBinder implements FormL
 
                     if (org == null) {
                     	org = new Organization();
-                    	org.setId(row.getId());
+                    	if(row.getId()!=null && !row.getId().equals("")) {
+                    		org.setId(row.getId());
+                    	}else {
+                    		UuidGenerator uuid = UuidGenerator.getInstance();
+                    		org.setId(uuid.getUuid());
+                    	}
                     	org.setName(row.getProperty("name"));
                     	org.setDescription(row.getProperty("description"));
-                        org.setParentId(row.getProperty("parentId"));
+                    	if(row.getProperty("parentId")!=null && !row.getProperty("parentId").equals(""))
+                    		org.setParentId(row.getProperty("parentId"));
                         org.setDateCreated(now);
                         org.setCreatedBy(currentUser);
                         organizationDao.addOrganization(org);
@@ -93,7 +96,8 @@ public class OrganizationDirectoryFormBinder extends FormBinder implements FormL
                     } else {
                     	org.setName(row.getProperty("name"));
                     	org.setDescription(row.getProperty("description"));
-                        org.setParentId(row.getProperty("parentId"));
+                    	if(row.getProperty("parentId")!=null && !row.getProperty("parentId").equals(""))
+                    		org.setParentId(row.getProperty("parentId"));
                         org.setDateModified(row.getDateModified());
                         org.setModifiedBy(row.getModifiedBy());
                         organizationDao.updateOrganization(org);
@@ -101,7 +105,8 @@ public class OrganizationDirectoryFormBinder extends FormBinder implements FormL
                         row.setModifiedBy(currentUser);
                     }
                 });
-
+        formRowSet = super.store(element, formRowSet, formData);
+        
         return formRowSet;
     }
 
