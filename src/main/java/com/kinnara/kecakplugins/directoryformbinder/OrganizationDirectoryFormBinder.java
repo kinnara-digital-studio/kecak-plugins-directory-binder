@@ -2,6 +2,7 @@ package com.kinnara.kecakplugins.directoryformbinder;
 
 import java.util.Date;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.annotation.Nullable;
@@ -10,6 +11,7 @@ import org.joget.apps.app.service.AppUtil;
 import org.joget.apps.form.lib.DefaultFormBinder;
 import org.joget.apps.form.model.*;
 import org.joget.apps.form.service.FormUtil;
+import org.joget.commons.util.LogUtil;
 import org.joget.commons.util.UuidGenerator;
 import org.joget.directory.dao.OrganizationDao;
 import org.joget.directory.model.Organization;
@@ -67,6 +69,7 @@ public class OrganizationDirectoryFormBinder extends DefaultFormBinder implement
                 .orElseGet(Stream::empty)
                 .findFirst()
                 .ifPresent(row -> {
+                    LogUtil.info(getClassName(), "store : row ["+row.entrySet().stream().map(e -> e.getKey() + "->" + e.getValue()).collect(Collectors.joining(" || "))+"]");
                     final String primaryKey = Optional.of(row)
                             .map(FormRow::getId)
                             .orElseGet(formData::getPrimaryKeyValue);
@@ -85,8 +88,7 @@ public class OrganizationDirectoryFormBinder extends DefaultFormBinder implement
                     	}
                     	org.setName(row.getProperty("name"));
                     	org.setDescription(row.getProperty("description"));
-                    	if(row.getProperty("parentId")!=null && !row.getProperty("parentId").equals(""))
-                    		org.setParentId(row.getProperty("parentId"));
+                    	Optional.ofNullable(row.getProperty("parentId")).filter(s -> !s.isEmpty()).ifPresent(org::setParentId);
                         org.setDateCreated(now);
                         org.setCreatedBy(currentUser);
                         organizationDao.addOrganization(org);
@@ -96,8 +98,7 @@ public class OrganizationDirectoryFormBinder extends DefaultFormBinder implement
                     } else {
                     	org.setName(row.getProperty("name"));
                     	org.setDescription(row.getProperty("description"));
-                    	if(row.getProperty("parentId")!=null && !row.getProperty("parentId").equals(""))
-                    		org.setParentId(row.getProperty("parentId"));
+                        Optional.ofNullable(row.getProperty("parentId")).filter(s -> !s.isEmpty()).ifPresent(org::setParentId);
                         org.setDateModified(row.getDateModified());
                         org.setModifiedBy(row.getModifiedBy());
                         organizationDao.updateOrganization(org);
@@ -105,6 +106,7 @@ public class OrganizationDirectoryFormBinder extends DefaultFormBinder implement
                         row.setModifiedBy(currentUser);
                     }
                 });
+
         formRowSet = super.store(element, formRowSet, formData);
         
         return formRowSet;
