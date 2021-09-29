@@ -15,8 +15,6 @@ import java.util.stream.Stream;
 
 public class OrganizationDirectoryDataListBinder extends FormRowDataListBinder {
 
-    final private Set<String> cacheIds = new HashSet<>();
-
     @Override
     public DataListCollection<Map<String, Object>> getData(DataList dataList, Map map, DataListFilterQueryObject[] dataListFilterQueryObjects, String sort, Boolean desc, Integer start, Integer rows) {
         ApplicationContext applicationContext = AppUtil.getApplicationContext();
