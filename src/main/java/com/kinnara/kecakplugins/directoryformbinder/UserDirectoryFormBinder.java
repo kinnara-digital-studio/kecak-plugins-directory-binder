@@ -32,6 +32,8 @@ import java.util.stream.Stream;
 /**
  * @author aristo
  *
+ * Store data into directory table <b>dir_user</b> and <b>dir_employment</b>.
+ * <br/>
  * Build in properties are:
  * <ul>
  *     <li>Table <b>dir_user</b></li>
