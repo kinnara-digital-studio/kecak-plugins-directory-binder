@@ -9,11 +9,9 @@ import org.joget.commons.util.LogUtil;
 import org.joget.commons.util.PasswordGeneratorUtil;
 import org.joget.directory.dao.EmploymentDao;
 import org.joget.directory.dao.OrganizationDao;
+import org.joget.directory.dao.RoleDao;
 import org.joget.directory.dao.UserDao;
-import org.joget.directory.model.Employment;
-import org.joget.directory.model.Organization;
-import org.joget.directory.model.User;
-import org.joget.directory.model.UserSalt;
+import org.joget.directory.model.*;
 import org.joget.directory.model.service.DirectoryUtil;
 import org.joget.directory.model.service.UserSecurity;
 import org.joget.workflow.util.WorkflowUtil;
@@ -23,10 +21,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
-import java.util.Collection;
-import java.util.Date;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Stream;
 
 /**
@@ -108,6 +103,7 @@ public class UserDirectoryFormBinder extends DefaultFormBinder implements FormLo
     public FormRowSet store(Element element, FormRowSet formRowSet, FormData formData) {
         final ApplicationContext applicationContext = AppUtil.getApplicationContext();
         final UserDao userDao = (UserDao) applicationContext.getBean("userDao");
+        final RoleDao roleDao = (RoleDao) applicationContext.getBean("roleDao");
         final OrganizationDao organizationDao = (OrganizationDao) applicationContext.getBean("organizationDao");
 
         final Date now = new Date();
@@ -131,11 +127,13 @@ public class UserDirectoryFormBinder extends DefaultFormBinder implements FormLo
                             .map(organizationDao::getOrganization)
                             .orElse(null);
 
+                    final Optional<Role> optRole = Optional.of("roleId")
+                            .map(s -> row.getProperty(s, WorkflowUtil.ROLE_USER))
+                            .map(roleDao::getRole);
                     final String active = row.getProperty("active", "true");
                     final String password = row.getProperty("password", "");
+                    final String confirmPassword = row.getProperty("confirm_password", "");
 
-                    UserSecurity us = DirectoryUtil.getUserSecurity();
-                    UserSalt userSalt = new UserSalt();
                     if (user == null) {
                         user = new User();
                         user.setId(row.getId());
@@ -152,25 +150,14 @@ public class UserDirectoryFormBinder extends DefaultFormBinder implements FormLo
                         }
                         user.setLocale(row.getProperty("locale"));
                         user.setTelephoneNumber(row.getProperty("telephone_number"));
-                        if (!password.isEmpty() && password.equals(row.getProperty("confirm_password", ""))) {
-                            if (us != null) {
-                                user.setPassword(us.encryptPassword(user.getUsername(), row.getProperty("password")));
-                            } else {
-                                try {
-                                    HashSalt hashSalt = PasswordGeneratorUtil.createNewHashWithSalt(row.getProperty("password"));
-                                    userSalt.setId(UUID.randomUUID().toString());
-                                    userSalt.setRandomSalt(hashSalt.getSalt());
 
-                                    user.setPassword(hashSalt.getHash());
-                                } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
-                                    LogUtil.error(getClassName(), e, e.getMessage());
-                                }
-                            }
-                        }
+                        updatePassword(user, password, confirmPassword);
 
                         user.setDateCreated(now);
                         user.setCreatedBy(currentUser);
                         userDao.addUser(user);
+
+                        optRole.map(Collections::singleton).ifPresent(user::setRoles);
 
                         if (organization != null) {
                             setEmployment(user, organization);
@@ -195,27 +182,16 @@ public class UserDirectoryFormBinder extends DefaultFormBinder implements FormLo
                         user.setTelephoneNumber(row.getProperty("telephone_number"));
                         user.setDateModified(row.getDateModified());
                         user.setModifiedBy(row.getModifiedBy());
-                        if (!password.isEmpty() && password.equals(row.getProperty("confirm_password", ""))) {
-                            if (us != null) {
-                                user.setPassword(us.encryptPassword(user.getUsername(), row.getProperty("password")));
-                            } else {
-                                try {
-                                    HashSalt hashSalt = PasswordGeneratorUtil.createNewHashWithSalt(password);
-                                    userSalt.setId(UUID.randomUUID().toString());
-                                    userSalt.setRandomSalt(hashSalt.getSalt());
 
-                                    user.setPassword(hashSalt.getHash());
-                                } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
-                                    LogUtil.error(getClassName(), e, e.getMessage());
-                                }
-                            }
-                        }
+                        updatePassword(user, password, confirmPassword);
 
-                        userDao.updateUser(user);
+                        optRole.map(Collections::singleton).ifPresent(user::setRoles);
 
                         if (organization != null) {
                             setEmployment(user, organization);
                         }
+
+                        userDao.updateUser(user);
 
                         row.setDateModified(now);
                         row.setModifiedBy(currentUser);
@@ -277,5 +253,26 @@ public class UserDirectoryFormBinder extends DefaultFormBinder implements FormLo
         employmentDao.assignUserToOrganization(employment.getUserId(), organization.getId());
 
         return user;
+    }
+
+    protected void updatePassword(User user, String password, String confirmPassword) {
+        final UserSecurity us = DirectoryUtil.getUserSecurity();
+        final UserSalt userSalt = new UserSalt();
+
+        if (!password.isEmpty() && password.equals(confirmPassword)) {
+            if (us != null) {
+                user.setPassword(us.encryptPassword(user.getUsername(), password));
+            } else {
+                try {
+                    HashSalt hashSalt = PasswordGeneratorUtil.createNewHashWithSalt(password);
+                    userSalt.setId(UUID.randomUUID().toString());
+                    userSalt.setRandomSalt(hashSalt.getSalt());
+
+                    user.setPassword(hashSalt.getHash());
+                } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
+                    LogUtil.error(getClassName(), e, e.getMessage());
+                }
+            }
+        }
     }
 }

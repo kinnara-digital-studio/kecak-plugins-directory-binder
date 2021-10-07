@@ -1,0 +1,19 @@
+[
+  {
+    "title": "Advance",
+    "properties": [
+      {
+        "name": "hideAdminRole",
+        "label": "Hide User Admin",
+        "type": "checkbox",
+        "value": "true",
+        "options": [
+          {
+            "value": "true",
+            "label": ""
+          }
+        ]
+      }
+    ]
+  }
+]
