@@ -32,6 +32,7 @@ public class UserDirectoryDataListBinder extends FormRowDataListBinder {
                     record.put("id", r.getId());
                     record.put("username", r.getUsername());
                     record.put("firstName", r.getFirstName());
+                    record.put("lastName", r.getLastName());
                     record.put("email", r.getEmail());
                     record.put("timeZone", r.getTimeZone());
                     record.put("telephone_number", r.getTelephoneNumber());

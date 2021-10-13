@@ -137,7 +137,7 @@ public class UserDirectoryFormBinder extends DefaultFormBinder implements FormLo
                     if (user == null) {
                         user = new User();
                         user.setId(row.getId());
-                        user.setUsername(row.getProperty("username"));
+                        user.setUsername(row.getProperty("username", row.getId()));
                         user.setFirstName(row.getProperty("firstName"));
                         user.setLastName(row.getProperty("lastName"));
                         user.setEmail(row.getProperty("email"));
@@ -166,7 +166,7 @@ public class UserDirectoryFormBinder extends DefaultFormBinder implements FormLo
                         row.setDateCreated(now);
                         row.setCreatedBy(currentUser);
                     } else {
-                        user.setUsername(row.getProperty("username"));
+                        user.setUsername(row.getProperty("username", row.getId()));
                         user.setFirstName(row.getProperty("firstName"));
                         user.setLastName(row.getProperty("lastName"));
                         user.setEmail(row.getProperty("email"));
