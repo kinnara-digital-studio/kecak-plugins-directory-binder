@@ -7,6 +7,7 @@ import org.joget.apps.form.dao.FormDataDao;
 import org.joget.apps.form.model.Form;
 import org.joget.apps.form.model.FormRow;
 import org.joget.directory.dao.OrganizationDao;
+import org.joget.directory.model.Organization;
 import org.springframework.context.ApplicationContext;
 
 import java.util.*;
@@ -22,8 +23,19 @@ public class OrganizationDirectoryDataListBinder extends FormRowDataListBinder {
         FormDataDao formDataDao = (FormDataDao) applicationContext.getBean("formDataDao");
 
         final Optional<Form> optForm = Optional.ofNullable(getSelectedForm());
-        final Set<String> ids = new HashSet<>();
-        final DataListCollection<Map<String, Object>> collect = Optional.ofNullable(organizationDao.findOrganizations(getCondition(map), null, sort, desc, start, rows))
+        
+        String condition = "WHERE 1=1 ";
+        String extraCondition = String.valueOf(map.get("extraCondition")).trim();
+        String[] param = null;
+        if(extraCondition!=null && !extraCondition.equals("")) {
+        	condition += " AND "+extraCondition;
+        }
+        for (DataListFilterQueryObject queryObject : dataListFilterQueryObjects) {
+        	condition += queryObject.getOperator()+" "+queryObject.getQuery();
+        	param = queryObject.getValues();
+		}
+        
+        final DataListCollection<Map<String, Object>> collect = Optional.ofNullable(organizationDao.findOrganizations(condition, param, sort, desc, start, rows))
                 .map(Collection::stream)
                 .orElseGet(Stream::empty)
                 .map(org -> {
@@ -58,7 +70,17 @@ public class OrganizationDirectoryDataListBinder extends FormRowDataListBinder {
     public int getDataTotalRowCount(DataList dataList, Map map, DataListFilterQueryObject[] dataListFilterQueryObjects) {
         ApplicationContext applicationContext = AppUtil.getApplicationContext();
         OrganizationDao organizationDao = (OrganizationDao) applicationContext.getBean("organizationDao");
-        return Math.toIntExact(organizationDao.countOrganizations(getCondition(map), null));
+        String condition = "WHERE 1=1 ";
+        String extraCondition = String.valueOf(map.get("extraCondition")).trim();
+        String[] param = null;
+        if(extraCondition!=null && !extraCondition.equals("")) {
+        	condition += " AND "+extraCondition;
+        }
+        for (DataListFilterQueryObject queryObject : dataListFilterQueryObjects) {
+        	condition += queryObject.getOperator()+" "+queryObject.getQuery();
+        	param = queryObject.getValues();
+		}
+        return Math.toIntExact(organizationDao.countOrganizations(condition, param));
     }
 
     @Override
