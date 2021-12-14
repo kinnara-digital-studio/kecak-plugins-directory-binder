@@ -6,6 +6,7 @@ import org.joget.apps.datalist.model.*;
 import org.joget.apps.form.dao.FormDataDao;
 import org.joget.apps.form.model.Form;
 import org.joget.apps.form.model.FormRow;
+import org.joget.commons.util.LogUtil;
 import org.joget.directory.dao.OrganizationDao;
 import org.springframework.context.ApplicationContext;
 
@@ -16,14 +17,15 @@ import java.util.stream.Stream;
 public class OrganizationDirectoryDataListBinder extends FormRowDataListBinder {
 
     @Override
-    public DataListCollection<Map<String, Object>> getData(DataList dataList, Map map, DataListFilterQueryObject[] dataListFilterQueryObjects, String sort, Boolean desc, Integer start, Integer rows) {
-        ApplicationContext applicationContext = AppUtil.getApplicationContext();
-        OrganizationDao organizationDao = (OrganizationDao) applicationContext.getBean("organizationDao");
-        FormDataDao formDataDao = (FormDataDao) applicationContext.getBean("formDataDao");
+    public DataListCollection<Map<String, Object>> getData(DataList dataList, Map map, DataListFilterQueryObject[] filter, String sort, Boolean desc, Integer start, Integer rows) {
+        final ApplicationContext applicationContext = AppUtil.getApplicationContext();
+        final OrganizationDao organizationDao = (OrganizationDao) applicationContext.getBean("organizationDao");
+        final FormDataDao formDataDao = (FormDataDao) applicationContext.getBean("formDataDao");
 
         final Optional<Form> optForm = Optional.ofNullable(getSelectedForm());
-        final Set<String> ids = new HashSet<>();
-        final DataListCollection<Map<String, Object>> collect = Optional.ofNullable(organizationDao.findOrganizations(getCondition(map), null, sort, desc, start, rows))
+        final DataListFilterQueryObject orgCriteria = getOrganizationCriteria(map, filter);
+
+        final DataListCollection<Map<String, Object>> collect = Optional.ofNullable(organizationDao.findOrganizations(orgCriteria.getQuery(), orgCriteria.getValues(), sort, desc, start, rows))
                 .map(Collection::stream)
                 .orElseGet(Stream::empty)
                 .map(org -> {
@@ -55,10 +57,10 @@ public class OrganizationDirectoryDataListBinder extends FormRowDataListBinder {
     }
 
     @Override
-    public int getDataTotalRowCount(DataList dataList, Map map, DataListFilterQueryObject[] dataListFilterQueryObjects) {
-        ApplicationContext applicationContext = AppUtil.getApplicationContext();
-        OrganizationDao organizationDao = (OrganizationDao) applicationContext.getBean("organizationDao");
-        return Math.toIntExact(organizationDao.countOrganizations(getCondition(map), null));
+    public int getDataTotalRowCount(DataList dataList, Map map, DataListFilterQueryObject[] filter) {
+        final OrganizationDao organizationDao = (OrganizationDao) AppUtil.getApplicationContext().getBean("organizationDao");
+        final DataListFilterQueryObject orgCriteria = getOrganizationCriteria(map, filter);
+        return Math.toIntExact(organizationDao.countOrganizations(orgCriteria.getQuery(), orgCriteria.getValues()));
     }
 
     @Override
@@ -86,13 +88,32 @@ public class OrganizationDirectoryDataListBinder extends FormRowDataListBinder {
         return getClass().getName();
     }
 
-    protected String getCondition(Map properties) {
-        return Optional.of("extraCondition")
-                .map(properties::get)
-                .map(String::valueOf)
-                .map(String::trim)
-                .filter(s -> !s.isEmpty())
-                .map(s -> "where " + s)
-                .orElse("");
+    /**
+     *
+     * @param map
+     * @param filter
+     * @return
+     */
+    protected DataListFilterQueryObject getOrganizationCriteria(Map map, DataListFilterQueryObject[] filter) {
+        final ApplicationContext applicationContext = AppUtil.getApplicationContext();
+        final FormDataDao formDataDao = (FormDataDao) applicationContext.getBean("formDataDao");
+        final DataListFilterQueryObject formCriteria = getCriteria(map, filter);
+
+        final Optional<Form> optForm = Optional.ofNullable(getSelectedForm());
+        final Set<String> ids = optForm
+                .map(f -> formDataDao.find(f, formCriteria.getQuery(), formCriteria.getValues(), null, null, null, null))
+                .map(Collection::stream)
+                .orElseGet(Stream::empty)
+                .map(FormRow::getId)
+                .collect(Collectors.toSet());
+
+        final String condition = ids.isEmpty() ? null : ("where id in (" + ids.stream().map(s -> "?").collect(Collectors.joining(", ")) + ")");
+        final String[] parameters = ids.toArray(new String[0]);
+
+        final DataListFilterQueryObject orgCriteria = new DataListFilterQueryObject();
+        orgCriteria.setOperator("AND");
+        orgCriteria.setQuery(condition);
+        orgCriteria.setValues(parameters);
+        return orgCriteria;
     }
 }
