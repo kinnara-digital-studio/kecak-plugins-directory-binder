@@ -5,15 +5,16 @@ import com.kinnarastudio.commons.jsonstream.JSONCollectors;
 import com.kinnarastudio.commons.jsonstream.JSONStream;
 import org.joget.apps.app.service.AppUtil;
 import org.joget.apps.datalist.lib.FormRowDataListBinder;
-import org.joget.apps.datalist.model.*;
-import org.joget.directory.dao.RoleDao;
+import org.joget.apps.datalist.model.DataList;
+import org.joget.apps.datalist.model.DataListCollection;
+import org.joget.apps.datalist.model.DataListFilterQueryObject;
+import org.joget.commons.util.LogUtil;
 import org.joget.directory.dao.UserDao;
 import org.joget.workflow.util.WorkflowUtil;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.context.ApplicationContext;
 
-import javax.annotation.Nullable;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -21,10 +22,10 @@ import java.util.stream.Stream;
 public class UserDirectoryDataListBinder extends FormRowDataListBinder {
     @Override
     public DataListCollection<Map<String, Object>> getData(DataList dataList, Map map, DataListFilterQueryObject[] filterQueryObjects, String sort, Boolean desc, Integer start, Integer rows) {
-        ApplicationContext applicationContext = AppUtil.getApplicationContext();
-        UserDao userDao = (UserDao) applicationContext.getBean("userDao");
-        final @Nullable String role = isHideAdminRole() ? WorkflowUtil.ROLE_USER : null;
-        return Optional.ofNullable(userDao.getUsers(filter(filterQueryObjects), null, null, null, null, role, null, sort, desc, start, rows))
+        final ApplicationContext applicationContext = AppUtil.getApplicationContext();
+        final UserDao userDao = (UserDao) applicationContext.getBean("userDao");
+        final DataListFilterQueryObject criteria = getCriteria(map, filterQueryObjects);
+        return Optional.ofNullable(userDao.findUsers(criteria.getQuery(), criteria.getValues(), sort, desc, start, rows))
                 .map(Collection::stream)
                 .orElseGet(Stream::empty)
                 .map(r -> {
@@ -48,10 +49,9 @@ public class UserDirectoryDataListBinder extends FormRowDataListBinder {
 
     @Override
     public int getDataTotalRowCount(DataList dataList, Map map, DataListFilterQueryObject[] filterQueryObjects) {
-        ApplicationContext applicationContext = AppUtil.getApplicationContext();
-        UserDao userDao = (UserDao) applicationContext.getBean("userDao");
-        final @Nullable String role = isHideAdminRole() ? WorkflowUtil.ROLE_USER : null;
-        return Math.toIntExact(userDao.getTotalUsers(filter(filterQueryObjects), null, null, null, null, role, null));
+        final UserDao userDao = (UserDao) AppUtil.getApplicationContext().getBean("userDao");
+        final DataListFilterQueryObject criteria = getCriteria(map, filterQueryObjects);
+        return Math.toIntExact(userDao.countUsers(criteria.getQuery(), criteria.getValues()));
     }
 
     @Override
@@ -110,5 +110,27 @@ public class UserDirectoryDataListBinder extends FormRowDataListBinder {
                 .findFirst()
                 .orElse("");
 
+    }
+
+    @Override
+    protected DataListFilterQueryObject getCriteria(Map properties, DataListFilterQueryObject[] filterQueryObjects) {
+        final DataListFilterQueryObject criteria = super.getCriteria(properties, filterQueryObjects);
+        criteria.setQuery(criteria.getQuery().replaceAll("customProperties", "e"));
+
+        if(isHideAdminRole()) {
+            final String query = criteria.getQuery();
+            criteria.setQuery(query + (query.isEmpty() ? " where " : " and ") + " e.id not in (select u.id from User u join u.roles r where r.id = ?)");
+
+            final List<String> values = Optional.of(criteria)
+                    .map(DataListFilterQueryObject::getValues)
+                    .map(Arrays::stream)
+                    .orElseGet(Stream::empty)
+                    .collect(Collectors.toList());
+
+            values.add(WorkflowUtil.ROLE_ADMIN);
+            criteria.setValues(values.toArray(new String[0]));
+        }
+
+        return criteria;
     }
 }
