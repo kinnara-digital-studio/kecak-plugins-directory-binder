@@ -8,7 +8,6 @@ import org.joget.apps.datalist.lib.FormRowDataListBinder;
 import org.joget.apps.datalist.model.DataList;
 import org.joget.apps.datalist.model.DataListCollection;
 import org.joget.apps.datalist.model.DataListFilterQueryObject;
-import org.joget.commons.util.LogUtil;
 import org.joget.directory.dao.UserDao;
 import org.joget.workflow.util.WorkflowUtil;
 import org.json.JSONArray;
