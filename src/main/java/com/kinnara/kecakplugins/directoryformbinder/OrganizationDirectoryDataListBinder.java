@@ -8,6 +8,7 @@ import org.joget.apps.form.model.Form;
 import org.joget.apps.form.model.FormRow;
 import org.joget.commons.util.LogUtil;
 import org.joget.directory.dao.OrganizationDao;
+import org.joget.directory.model.Organization;
 import org.springframework.context.ApplicationContext;
 
 import java.util.*;
