@@ -15,6 +15,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class OrganizationDirectoryDataListBinder extends FormRowDataListBinder {
+    final Set<String> cachedIds = new HashSet<>();
 
     @Override
     public DataListCollection<Map<String, Object>> getData(DataList dataList, Map map, DataListFilterQueryObject[] filter, String sort, Boolean desc, Integer start, Integer rows) {
@@ -100,15 +101,17 @@ public class OrganizationDirectoryDataListBinder extends FormRowDataListBinder {
         final DataListFilterQueryObject formCriteria = getCriteria(map, filter);
 
         final Optional<Form> optForm = Optional.ofNullable(getSelectedForm());
-        final Set<String> ids = optForm
-                .map(f -> formDataDao.find(f, formCriteria.getQuery(), formCriteria.getValues(), null, null, null, null))
-                .map(Collection::stream)
-                .orElseGet(Stream::empty)
-                .map(FormRow::getId)
-                .collect(Collectors.toSet());
+        if(cachedIds.isEmpty()) {
+            cachedIds.addAll(optForm
+                    .map(f -> formDataDao.find(f, formCriteria.getQuery(), formCriteria.getValues(), null, null, null, null))
+                    .map(Collection::stream)
+                    .orElseGet(Stream::empty)
+                    .map(FormRow::getId)
+                    .collect(Collectors.toSet()));
+        }
 
-        final String condition = ids.isEmpty() ? null : ("where id in (" + ids.stream().map(s -> "?").collect(Collectors.joining(", ")) + ")");
-        final String[] parameters = ids.toArray(new String[0]);
+        final String condition = cachedIds.isEmpty() ? null : ("where id in (" + cachedIds.stream().map(s -> "?").collect(Collectors.joining(", ")) + ")");
+        final String[] parameters = cachedIds.toArray(new String[0]);
 
         final DataListFilterQueryObject orgCriteria = new DataListFilterQueryObject();
         orgCriteria.setOperator("AND");
