@@ -1,5 +1,6 @@
 package com.kinnara.kecakplugins.directoryformbinder;
 
+import com.kinnarastudio.commons.Try;
 import org.joget.apps.app.service.AppUtil;
 import org.joget.apps.form.lib.DefaultFormBinder;
 import org.joget.apps.form.model.*;
@@ -108,7 +109,7 @@ public class UserDirectoryFormBinder extends DefaultFormBinder implements FormLo
                 .map(FormRowSet::stream)
                 .orElseGet(Stream::empty)
                 .findFirst()
-                .map(row -> {
+                .map(Try.onFunction(row -> {
                     final String primaryKey = Optional.of(row)
                             .map(FormRow::getId)
                             .orElseGet(formData::getPrimaryKeyValue);
@@ -122,9 +123,6 @@ public class UserDirectoryFormBinder extends DefaultFormBinder implements FormLo
                             .map(organizationDao::getOrganization)
                             .orElse(null);
 
-                    final Optional<Role> optRole = Optional.of("roleId")
-                            .map(s -> row.getProperty(s, WorkflowUtil.ROLE_USER))
-                            .map(roleDao::getRole);
                     final String active = row.getProperty("active", "true");
                     final String password = row.getProperty("password", "");
                     final String confirmPassword = row.getProperty("confirm_password", "");
@@ -146,7 +144,11 @@ public class UserDirectoryFormBinder extends DefaultFormBinder implements FormLo
                         user.setCreatedBy(currentUser);
                         userDao.addUser(user);
 
-                        optRole.map(Collections::singleton).ifPresent(user::setRoles);
+                        Optional.of("roleId")
+                                .map(s -> row.getProperty(s, WorkflowUtil.ROLE_USER))
+                                .map(roleDao::getRole)
+                                .map(Collections::singleton)
+                                .ifPresent(user::setRoles);
 
                         if (organization != null) {
                             setEmployment(user, organization);
@@ -155,6 +157,7 @@ public class UserDirectoryFormBinder extends DefaultFormBinder implements FormLo
                         row.setDateCreated(now);
                         row.setCreatedBy(currentUser);
                     } else {
+                        user.setId(row.getId());
                         user.setUsername(row.getProperty("username", row.getId()));
                         user.setFirstName(row.getProperty("firstName"));
                         user.setLastName(row.getProperty("lastName"));
@@ -166,8 +169,7 @@ public class UserDirectoryFormBinder extends DefaultFormBinder implements FormLo
                         user.setModifiedBy(row.getModifiedBy());
 
                         updatePassword(user, password, confirmPassword);
-
-                        optRole.map(Collections::singleton).ifPresent(user::setRoles);
+//                        optRole.map(Collections::singleton).ifPresent(user::setRoles);
 
                         if (organization != null) {
                             setEmployment(user, organization);
@@ -182,7 +184,7 @@ public class UserDirectoryFormBinder extends DefaultFormBinder implements FormLo
                     final FormRowSet result = new FormRowSet();
                     result.add(row);
                     return result;
-                }).orElse(originalRowSet);
+                })).orElse(originalRowSet);
     }
 
     @Override
