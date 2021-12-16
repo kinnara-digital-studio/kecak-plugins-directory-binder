@@ -26,7 +26,7 @@ import java.util.stream.Stream;
 
 /**
  * @author aristo
- *
+ * <p>
  * Store data into directory table <b>dir_user</b> and <b>dir_employment</b>.
  * <br/>
  * Build in properties are:
@@ -64,23 +64,18 @@ public class UserDirectoryFormBinder extends DefaultFormBinder implements FormLo
     public FormRowSet load(Element element, String primaryKey, FormData formData) {
         final ApplicationContext applicationContext = AppUtil.getApplicationContext();
         final UserDao userDao = (UserDao) applicationContext.getBean("userDao");
-        final FormRowSet results = new FormRowSet();
 
-        Optional.ofNullable(primaryKey)
+        return Optional.ofNullable(primaryKey)
                 .map(userDao::getUserById)
-                .ifPresent(user -> {
-                    FormRow row = new FormRow();
-                    row.setId(user.getId());
+                .map(user -> {
+                    final FormRow row = new FormRow();
 
+                    row.setId(user.getId());
                     row.setProperty("username", Optional.ofNullable(user.getUsername()).orElse(""));
                     row.setProperty("firstName", Optional.ofNullable(user.getFirstName()).orElse(""));
                     row.setProperty("lastName", Optional.ofNullable(user.getLastName()).orElse(""));
                     row.setProperty("email", Optional.ofNullable(user.getEmail()).orElse(""));
-                    String active = "true";
-                    if (user.getActive() != 1) {
-                        active = "false";
-                    }
-                    row.setProperty("active", active);
+                    row.setProperty("active", user.getActive() != 1 ? "false" : "true");
                     row.setProperty("locale", Optional.ofNullable(user.getLocale()).orElse(""));
                     row.setProperty("telephone_number", Optional.ofNullable(user.getTelephoneNumber()).orElse(""));
 
@@ -92,15 +87,15 @@ public class UserDirectoryFormBinder extends DefaultFormBinder implements FormLo
                             .map(Employment::getOrganizationId)
                             .ifPresent(s -> row.setProperty("organizationId", s));
 
-
-                    results.add(row);
-                });
-
-        return results;
+                    final FormRowSet result = new FormRowSet();
+                    result.add(row);
+                    return result;
+                })
+                .orElseGet(FormRowSet::new);
     }
 
     @Override
-    public FormRowSet store(Element element, FormRowSet formRowSet, FormData formData) {
+    public FormRowSet store(Element element, FormRowSet originalRowSet, FormData formData) {
         final ApplicationContext applicationContext = AppUtil.getApplicationContext();
         final UserDao userDao = (UserDao) applicationContext.getBean("userDao");
         final RoleDao roleDao = (RoleDao) applicationContext.getBean("roleDao");
@@ -109,11 +104,11 @@ public class UserDirectoryFormBinder extends DefaultFormBinder implements FormLo
         final Date now = new Date();
         final String currentUser = WorkflowUtil.getCurrentUsername();
 
-        Optional.ofNullable(formRowSet)
+        return Optional.ofNullable(originalRowSet)
                 .map(FormRowSet::stream)
                 .orElseGet(Stream::empty)
                 .findFirst()
-                .ifPresent(row -> {
+                .map(row -> {
                     final String primaryKey = Optional.of(row)
                             .map(FormRow::getId)
                             .orElseGet(formData::getPrimaryKeyValue);
@@ -141,13 +136,7 @@ public class UserDirectoryFormBinder extends DefaultFormBinder implements FormLo
                         user.setFirstName(row.getProperty("firstName"));
                         user.setLastName(row.getProperty("lastName"));
                         user.setEmail(row.getProperty("email"));
-                        if (active.equals("true")
-                                || active.equals("active")
-                                || active.equals("1")) {
-                            user.setActive(1);
-                        } else {
-                            user.setActive(0);
-                        }
+                        user.setActive(active.equals("true") || active.equals("active") || active.equals("1") ? 1 : 0);
                         user.setLocale(row.getProperty("locale"));
                         user.setTelephoneNumber(row.getProperty("telephone_number"));
 
@@ -170,14 +159,7 @@ public class UserDirectoryFormBinder extends DefaultFormBinder implements FormLo
                         user.setFirstName(row.getProperty("firstName"));
                         user.setLastName(row.getProperty("lastName"));
                         user.setEmail(row.getProperty("email"));
-
-                        if ("true".equals(active)
-                                || "active".equals(active)
-                                || "1".equals(active)) {
-                            user.setActive(1);
-                        } else {
-                            user.setActive(0);
-                        }
+                        user.setActive("true".equals(active) || "active".equals(active) || "1".equals(active) ? 1 : 0);
                         user.setLocale(row.getProperty("locale"));
                         user.setTelephoneNumber(row.getProperty("telephone_number"));
                         user.setDateModified(row.getDateModified());
@@ -196,9 +178,11 @@ public class UserDirectoryFormBinder extends DefaultFormBinder implements FormLo
                         row.setDateModified(now);
                         row.setModifiedBy(currentUser);
                     }
-                });
 
-        return formRowSet;
+                    final FormRowSet result = new FormRowSet();
+                    result.add(row);
+                    return result;
+                }).orElse(originalRowSet);
     }
 
     @Override
@@ -235,7 +219,7 @@ public class UserDirectoryFormBinder extends DefaultFormBinder implements FormLo
     protected User setEmployment(@Nonnull User user, @Nonnull Organization organization) {
         final EmploymentDao employmentDao = (EmploymentDao) AppUtil.getApplicationContext().getBean("employmentDao");
 
-        Employment employment = Optional.of(user)
+        final Employment employment = Optional.of(user)
                 .map(User::getEmployments)
                 .map(Collection<Employment>::stream)
                 .orElseGet(Stream::empty)
