@@ -51,7 +51,7 @@ import java.util.stream.Stream;
 public class UserDirectoryFormBinder extends DefaultFormBinder implements FormLoadElementBinder, FormStoreElementBinder, FormDataDeletableBinder {
     @Override
     public String getFormId() {
-        Form form = FormUtil.findRootForm(getElement());
+        final Form form = FormUtil.findRootForm(getElement());
         return form.getPropertyString(FormUtil.PROPERTY_ID);
     }
 
