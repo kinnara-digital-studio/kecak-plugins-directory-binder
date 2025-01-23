@@ -1,7 +1,14 @@
-package com.kinnara.kecakplugins.directoryformbinder;
+package com.kinnarastudio.kecakplugins.directoryformbinder;
 
 import java.util.ArrayList;
 import java.util.Collection;
+
+import com.kinnarastudio.kecakplugins.directoryformbinder.datalist.OrganizationDirectoryDataListBinder;
+import com.kinnarastudio.kecakplugins.directoryformbinder.datalist.RoleDirectoryDataListBinder;
+import com.kinnarastudio.kecakplugins.directoryformbinder.datalist.UserDirectoryDataListBinder;
+import com.kinnarastudio.kecakplugins.directoryformbinder.form.OrganizationDirectoryFormBinder;
+import com.kinnarastudio.kecakplugins.directoryformbinder.form.RoleDirectoryFormBinder;
+import com.kinnarastudio.kecakplugins.directoryformbinder.form.UserDirectoryFormBinder;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceRegistration;

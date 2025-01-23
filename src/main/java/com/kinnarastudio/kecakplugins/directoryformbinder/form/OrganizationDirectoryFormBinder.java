@@ -1,4 +1,4 @@
-package com.kinnara.kecakplugins.directoryformbinder;
+package com.kinnarastudio.kecakplugins.directoryformbinder.form;
 
 import org.joget.apps.app.service.AppUtil;
 import org.joget.apps.form.lib.DefaultFormBinder;
@@ -7,15 +7,19 @@ import org.joget.apps.form.service.FormUtil;
 import org.joget.commons.util.UuidGenerator;
 import org.joget.directory.dao.OrganizationDao;
 import org.joget.directory.model.Organization;
+import org.joget.plugin.base.PluginManager;
 import org.joget.workflow.util.WorkflowUtil;
 import org.springframework.context.ApplicationContext;
 
 import java.util.Collection;
 import java.util.Date;
 import java.util.Optional;
+import java.util.ResourceBundle;
 import java.util.stream.Stream;
 
 public class OrganizationDirectoryFormBinder extends DefaultFormBinder implements FormLoadElementBinder, FormStoreElementBinder, FormDataDeletableBinder {
+    public final static String LABEL = "Organization Directory Form Binder";
+
     @Override
     public String getFormId() {
         Form form = FormUtil.findRootForm(getElement());
@@ -38,8 +42,8 @@ public class OrganizationDirectoryFormBinder extends DefaultFormBinder implement
                 .map(organizationDao::getOrganization)
                 .map(org -> {
                     final FormRow row = Optional.ofNullable(formRowSet)
-                            .map(Collection::stream)
-                            .orElseGet(Stream::empty)
+                            .stream()
+                            .flatMap(Collection::stream)
                             .findFirst()
                             .orElseGet(FormRow::new);
 
@@ -66,8 +70,8 @@ public class OrganizationDirectoryFormBinder extends DefaultFormBinder implement
 
         // insert or update to table dir_org
         final FormRowSet savedRowSet = Optional.ofNullable(originalRowSet)
-                .map(FormRowSet::stream)
-                .orElseGet(Stream::empty)
+                .stream()
+                .flatMap(Collection::stream)
 
                 // assume this is not multirow
                 .findFirst()
@@ -83,8 +87,6 @@ public class OrganizationDirectoryFormBinder extends DefaultFormBinder implement
                         org.setName(row.getProperty("name"));
                         org.setDescription(row.getProperty("description"));
                         Optional.ofNullable(row.getProperty("parentId")).filter(s -> !s.isEmpty()).ifPresent(org::setParentId);
-                        org.setDateModified(row.getDateModified());
-                        org.setModifiedBy(row.getModifiedBy());
                         organizationDao.updateOrganization(org);
                     } else {
                         final Organization org = new Organization();
@@ -99,8 +101,6 @@ public class OrganizationDirectoryFormBinder extends DefaultFormBinder implement
                         org.setName(row.getProperty("name"));
                         org.setDescription(row.getProperty("description"));
                         Optional.ofNullable(row.getProperty("parentId")).filter(s -> !s.isEmpty()).ifPresent(org::setParentId);
-                        org.setDateCreated(now);
-                        org.setCreatedBy(currentUser);
                         organizationDao.addOrganization(org);
 
                         row.setDateCreated(now);
@@ -127,7 +127,10 @@ public class OrganizationDirectoryFormBinder extends DefaultFormBinder implement
 
     @Override
     public String getVersion() {
-        return getClass().getPackage().getImplementationVersion();
+        PluginManager pluginManager = (PluginManager) AppUtil.getApplicationContext().getBean("pluginManager");
+        ResourceBundle resourceBundle = pluginManager.getPluginMessageBundle(getClassName(), "/messages/BuildNumber");
+        String buildNumber = resourceBundle.getString("buildNumber");
+        return buildNumber;
     }
 
     @Override
@@ -137,7 +140,7 @@ public class OrganizationDirectoryFormBinder extends DefaultFormBinder implement
 
     @Override
     public String getLabel() {
-        return "Organization Directory Form Binder";
+        return LABEL;
     }
 
     @Override

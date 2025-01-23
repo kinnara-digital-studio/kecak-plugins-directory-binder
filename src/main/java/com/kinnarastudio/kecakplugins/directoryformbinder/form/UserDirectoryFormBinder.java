@@ -1,13 +1,10 @@
-package com.kinnara.kecakplugins.directoryformbinder;
+package com.kinnarastudio.kecakplugins.directoryformbinder.form;
 
 import com.kinnarastudio.commons.Try;
 import org.joget.apps.app.service.AppUtil;
 import org.joget.apps.form.lib.DefaultFormBinder;
 import org.joget.apps.form.model.*;
 import org.joget.apps.form.service.FormUtil;
-import org.joget.commons.util.HashSalt;
-import org.joget.commons.util.LogUtil;
-import org.joget.commons.util.PasswordGeneratorUtil;
 import org.joget.directory.dao.EmploymentDao;
 import org.joget.directory.dao.OrganizationDao;
 import org.joget.directory.dao.RoleDao;
@@ -15,15 +12,13 @@ import org.joget.directory.dao.UserDao;
 import org.joget.directory.model.*;
 import org.joget.directory.model.service.DirectoryUtil;
 import org.joget.directory.model.service.UserSecurity;
+import org.joget.plugin.base.PluginManager;
 import org.joget.workflow.util.WorkflowUtil;
 import org.springframework.context.ApplicationContext;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.security.NoSuchAlgorithmException;
-import java.security.spec.InvalidKeySpecException;
 import java.util.*;
-import java.util.stream.Stream;
 
 /**
  * @author aristo
@@ -50,6 +45,8 @@ import java.util.stream.Stream;
  * </ul>
  */
 public class UserDirectoryFormBinder extends DefaultFormBinder implements FormLoadElementBinder, FormStoreElementBinder, FormDataDeletableBinder {
+    public final static String LABEL = "User Directory Form Binder";
+
     @Override
     public String getFormId() {
         final Form form = FormUtil.findRootForm(getElement());
@@ -82,8 +79,8 @@ public class UserDirectoryFormBinder extends DefaultFormBinder implements FormLo
 
                     Optional.of(user)
                             .map(User::getEmployments)
-                            .map(Collection<Employment>::stream)
-                            .orElseGet(Stream::empty)
+                            .stream()
+                            .flatMap(Collection<Employment>::stream)
                             .findFirst()
                             .map(Employment::getOrganizationId)
                             .ifPresent(s -> row.setProperty("organizationId", s));
@@ -106,8 +103,8 @@ public class UserDirectoryFormBinder extends DefaultFormBinder implements FormLo
         final String currentUser = WorkflowUtil.getCurrentUsername();
 
         return Optional.ofNullable(originalRowSet)
-                .map(FormRowSet::stream)
-                .orElseGet(Stream::empty)
+                .stream()
+                .flatMap(Collection::stream)
                 .findFirst()
                 .map(Try.onFunction(row -> {
                     final String primaryKey = Optional.of(row)
@@ -140,12 +137,10 @@ public class UserDirectoryFormBinder extends DefaultFormBinder implements FormLo
 
                         updatePassword(user, password, confirmPassword);
 
-                        user.setDateCreated(now);
-                        user.setCreatedBy(currentUser);
                         userDao.addUser(user);
 
                         Optional.of("roleId")
-                                .map(s -> row.getProperty(s, WorkflowUtil.ROLE_USER))
+                                .map(s -> row.getProperty(s, "ROLE_USER"))
                                 .map(roleDao::getRole)
                                 .map(Collections::singleton)
                                 .ifPresent(user::setRoles);
@@ -165,8 +160,6 @@ public class UserDirectoryFormBinder extends DefaultFormBinder implements FormLo
                         user.setActive("true".equals(active) || "active".equals(active) || "1".equals(active) ? 1 : 0);
                         user.setLocale(row.getProperty("locale"));
                         user.setTelephoneNumber(row.getProperty("telephone_number"));
-                        user.setDateModified(row.getDateModified());
-                        user.setModifiedBy(row.getModifiedBy());
 
                         updatePassword(user, password, confirmPassword);
 //                        optRole.map(Collections::singleton).ifPresent(user::setRoles);
@@ -189,12 +182,15 @@ public class UserDirectoryFormBinder extends DefaultFormBinder implements FormLo
 
     @Override
     public String getName() {
-        return getLabel();
+        return LABEL;
     }
 
     @Override
     public String getVersion() {
-        return getClass().getPackage().getImplementationVersion();
+        PluginManager pluginManager = (PluginManager) AppUtil.getApplicationContext().getBean("pluginManager");
+        ResourceBundle resourceBundle = pluginManager.getPluginMessageBundle(getClassName(), "/messages/BuildNumber");
+        String buildNumber = resourceBundle.getString("buildNumber");
+        return buildNumber;
     }
 
     @Override
@@ -204,7 +200,7 @@ public class UserDirectoryFormBinder extends DefaultFormBinder implements FormLo
 
     @Override
     public String getLabel() {
-        return "User Directory Form Binder";
+        return LABEL;
     }
 
     @Override
@@ -222,9 +218,8 @@ public class UserDirectoryFormBinder extends DefaultFormBinder implements FormLo
         final EmploymentDao employmentDao = (EmploymentDao) AppUtil.getApplicationContext().getBean("employmentDao");
 
         final Employment employment = Optional.of(user)
-                .map(User::getEmployments)
-                .map(Collection<Employment>::stream)
-                .orElseGet(Stream::empty)
+                .map(User::getEmployments).stream()
+                .flatMap(Collection<Employment>::stream)
                 .findFirst()
                 .orElseGet(() -> {
                     Employment newEmployment = new Employment();
@@ -243,22 +238,9 @@ public class UserDirectoryFormBinder extends DefaultFormBinder implements FormLo
 
     protected void updatePassword(User user, String password, String confirmPassword) {
         final UserSecurity us = DirectoryUtil.getUserSecurity();
-        final UserSalt userSalt = new UserSalt();
 
         if (!password.isEmpty() && password.equals(confirmPassword)) {
-            if (us != null) {
-                user.setPassword(us.encryptPassword(user.getUsername(), password));
-            } else {
-                try {
-                    HashSalt hashSalt = PasswordGeneratorUtil.createNewHashWithSalt(password);
-                    userSalt.setId(UUID.randomUUID().toString());
-                    userSalt.setRandomSalt(hashSalt.getSalt());
-
-                    user.setPassword(hashSalt.getHash());
-                } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
-                    LogUtil.error(getClassName(), e, e.getMessage());
-                }
-            }
+            user.setPassword(us.encryptPassword(user.getUsername(), password));
         }
     }
 }

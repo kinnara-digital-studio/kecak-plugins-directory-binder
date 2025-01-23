@@ -1,35 +1,34 @@
-package com.kinnara.kecakplugins.directoryformbinder;
+package com.kinnarastudio.kecakplugins.directoryformbinder.datalist;
 
 import org.joget.apps.app.service.AppUtil;
 import org.joget.apps.datalist.lib.FormRowDataListBinder;
-import org.joget.apps.datalist.model.*;
+import org.joget.apps.datalist.model.DataList;
+import org.joget.apps.datalist.model.DataListCollection;
+import org.joget.apps.datalist.model.DataListFilterQueryObject;
 import org.joget.directory.dao.RoleDao;
+import org.joget.plugin.base.PluginManager;
 import org.springframework.context.ApplicationContext;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class RoleDirectoryDataListBinder extends FormRowDataListBinder {
+    public final static String LABEL = "Role Directory DataList Binder";
+
     @Override
     public DataListCollection<Map<String, Object>> getData(DataList dataList, Map map, DataListFilterQueryObject[] dataListFilterQueryObjects, String sort, Boolean desc, Integer start, Integer rows) {
         ApplicationContext applicationContext = AppUtil.getApplicationContext();
         RoleDao roleDao = (RoleDao) applicationContext.getBean("roleDao");
-        return Optional.ofNullable(roleDao.getRoles(Optional.of("extraCondition").map(map::get).map(String::valueOf).orElse(""), sort, desc, start, rows))
-                .map(Collection::stream)
-                .orElseGet(Stream::empty)
+        return Optional.ofNullable(roleDao.getRoles(Optional.of("extraCondition")
+                        .map(map::get)
+                        .map(String::valueOf)
+                        .orElse(""), sort, desc, start, rows))
+                .stream().flatMap(Collection::stream)
                 .map(r -> {
                     final Map<String, Object> record = new HashMap<>();
                     record.put("id", r.getId());
                     record.put("name", r.getName());
                     record.put("description", r.getDescription());
-                    record.put("dateCreated", r.getDateCreated());
-                    record.put("dateModified", r.getDateModified());
-                    record.put("createdBy", r.getCreatedBy());
-                    record.put("modifiedBy", r.getModifiedBy());
                     return record;
                 })
                 .collect(Collectors.toCollection(DataListCollection::new));
@@ -44,12 +43,15 @@ public class RoleDirectoryDataListBinder extends FormRowDataListBinder {
 
     @Override
     public String getName() {
-        return getLabel();
+        return LABEL;
     }
 
     @Override
     public String getVersion() {
-        return getClass().getPackage().getImplementationVersion();
+        PluginManager pluginManager = (PluginManager) AppUtil.getApplicationContext().getBean("pluginManager");
+        ResourceBundle resourceBundle = pluginManager.getPluginMessageBundle(getClassName(), "/messages/BuildNumber");
+        String buildNumber = resourceBundle.getString("buildNumber");
+        return buildNumber;
     }
 
     @Override
@@ -59,7 +61,7 @@ public class RoleDirectoryDataListBinder extends FormRowDataListBinder {
 
     @Override
     public String getLabel() {
-        return "Role Directory DataList Binder";
+        return LABEL;
     }
 
     @Override

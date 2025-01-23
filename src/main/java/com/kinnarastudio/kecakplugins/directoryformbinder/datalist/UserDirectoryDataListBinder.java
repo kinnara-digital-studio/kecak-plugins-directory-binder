@@ -1,4 +1,4 @@
-package com.kinnara.kecakplugins.directoryformbinder;
+package com.kinnarastudio.kecakplugins.directoryformbinder.datalist;
 
 import com.kinnarastudio.commons.Try;
 import com.kinnarastudio.commons.jsonstream.JSONCollectors;
@@ -9,6 +9,7 @@ import org.joget.apps.datalist.model.DataList;
 import org.joget.apps.datalist.model.DataListCollection;
 import org.joget.apps.datalist.model.DataListFilterQueryObject;
 import org.joget.directory.dao.UserDao;
+import org.joget.plugin.base.PluginManager;
 import org.joget.workflow.util.WorkflowUtil;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -19,14 +20,16 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class UserDirectoryDataListBinder extends FormRowDataListBinder {
+    public final static String LABEL = "User Directory DataList Binder";
+
     @Override
     public DataListCollection<Map<String, Object>> getData(DataList dataList, Map map, DataListFilterQueryObject[] filterQueryObjects, String sort, Boolean desc, Integer start, Integer rows) {
         final ApplicationContext applicationContext = AppUtil.getApplicationContext();
         final UserDao userDao = (UserDao) applicationContext.getBean("userDao");
         final DataListFilterQueryObject criteria = getCriteria(map, filterQueryObjects);
         return Optional.ofNullable(userDao.findUsers(criteria.getQuery(), criteria.getValues(), sort, desc, start, rows))
-                .map(Collection::stream)
-                .orElseGet(Stream::empty)
+                .stream()
+                .flatMap(Collection::stream)
                 .map(r -> {
                     final Map<String, Object> record = new HashMap<>();
                     record.put("id", r.getId());
@@ -37,10 +40,6 @@ public class UserDirectoryDataListBinder extends FormRowDataListBinder {
                     record.put("timeZone", r.getTimeZone());
                     record.put("telephone_number", r.getTelephoneNumber());
                     record.put("active", r.getActive());
-                    record.put("dateCreated", r.getDateCreated());
-                    record.put("dateModified", r.getDateModified());
-                    record.put("createdBy", r.getCreatedBy());
-                    record.put("modifiedBy", r.getModifiedBy());
                     return record;
                 })
                 .collect(Collectors.toCollection(DataListCollection::new));
@@ -55,12 +54,15 @@ public class UserDirectoryDataListBinder extends FormRowDataListBinder {
 
     @Override
     public String getName() {
-        return getLabel();
+        return LABEL;
     }
 
     @Override
     public String getVersion() {
-        return getClass().getPackage().getImplementationVersion();
+        PluginManager pluginManager = (PluginManager) AppUtil.getApplicationContext().getBean("pluginManager");
+        ResourceBundle resourceBundle = pluginManager.getPluginMessageBundle(getClassName(), "/messages/BuildNumber");
+        String buildNumber = resourceBundle.getString("buildNumber");
+        return buildNumber;
     }
 
     @Override
@@ -70,7 +72,7 @@ public class UserDirectoryDataListBinder extends FormRowDataListBinder {
 
     @Override
     public String getLabel() {
-        return "User Directory DataList Binder";
+        return LABEL;
     }
 
     @Override
@@ -101,8 +103,8 @@ public class UserDirectoryDataListBinder extends FormRowDataListBinder {
 
     protected String filter(DataListFilterQueryObject[] filters) {
         return Optional.ofNullable(filters)
-                .map(Arrays::stream)
-                .orElseGet(Stream::empty)
+                .stream()
+                .flatMap(Arrays::stream)
                 .map(DataListFilterQueryObject::getValues)
                 .flatMap(Arrays::stream)
                 .filter(s -> !s.isEmpty())
@@ -122,8 +124,8 @@ public class UserDirectoryDataListBinder extends FormRowDataListBinder {
 
             final List<String> values = Optional.of(criteria)
                     .map(DataListFilterQueryObject::getValues)
-                    .map(Arrays::stream)
-                    .orElseGet(Stream::empty)
+                    .stream()
+                    .flatMap(Arrays::stream)
                     .collect(Collectors.toList());
 
             values.add(WorkflowUtil.ROLE_ADMIN);
