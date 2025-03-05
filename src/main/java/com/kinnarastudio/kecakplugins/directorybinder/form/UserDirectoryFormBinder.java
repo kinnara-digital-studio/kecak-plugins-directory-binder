@@ -157,13 +157,6 @@ public class UserDirectoryFormBinder extends FormBinder implements FormLoadBinde
                             .map(Employment::getDepartment)
                             .map(Department::getHod);
 
-                    if (optHod.isEmpty()) {
-                        LogUtil.warn(getClassName(), "HOD Cleared username [" + username + "]");
-                    } else {
-                        final Employment hod = optHod.get();
-                        LogUtil.warn(getClassName(), "HOD Attached username [" + username + "] hod user [" + hod.getUserId() + "] id [" + hod.getId() + "] department [" + hod.getDepartmentId() + "]");
-                    }
-
                     final Optional<User> optUser = Optional.ofNullable(primaryKey)
                             .filter(s -> !s.isEmpty())
                             .map(userDao::getUserById);
