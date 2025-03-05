@@ -1,4 +1,4 @@
-package com.kinnarastudio.kecakplugins.directoryformbinder.datalist;
+package com.kinnarastudio.kecakplugins.directorybinder.datalist;
 
 import org.joget.apps.app.service.AppUtil;
 import org.joget.apps.datalist.lib.FormRowDataListBinder;

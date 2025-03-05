@@ -1,4 +1,4 @@
-package com.kinnarastudio.kecakplugins.directoryformbinder.form;
+package com.kinnarastudio.kecakplugins.directorybinder.form;
 
 import org.joget.apps.app.service.AppUtil;
 import org.joget.apps.form.lib.DefaultFormBinder;
@@ -15,7 +15,6 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.Optional;
 import java.util.ResourceBundle;
-import java.util.stream.Stream;
 
 public class OrganizationDirectoryFormBinder extends DefaultFormBinder implements FormLoadElementBinder, FormStoreElementBinder, FormDataDeletableBinder {
     public final static String LABEL = "Organization Directory Form Binder";

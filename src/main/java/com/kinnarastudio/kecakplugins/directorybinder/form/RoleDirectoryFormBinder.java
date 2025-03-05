@@ -1,4 +1,4 @@
-package com.kinnarastudio.kecakplugins.directoryformbinder.form;
+package com.kinnarastudio.kecakplugins.directorybinder.form;
 
 import org.joget.apps.app.service.AppUtil;
 import org.joget.apps.form.model.*;

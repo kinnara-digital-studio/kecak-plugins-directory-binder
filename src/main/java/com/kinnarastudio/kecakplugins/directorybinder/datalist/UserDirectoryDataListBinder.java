@@ -1,4 +1,4 @@
-package com.kinnarastudio.kecakplugins.directoryformbinder.datalist;
+package com.kinnarastudio.kecakplugins.directorybinder.datalist;
 
 import com.kinnarastudio.commons.Try;
 import com.kinnarastudio.commons.jsonstream.JSONCollectors;
@@ -88,7 +88,7 @@ public class UserDirectoryDataListBinder extends FormRowDataListBinder {
                 .map(json -> JSONStream.of(json, Try.onBiFunction(JSONArray::getJSONObject)))
                 .orElseGet(Stream::empty);
 
-        String str = AppUtil.readPluginResource(getClass().getName(), "/properties/UserDirectoryDataListBinder.json");
+        String str = AppUtil.readPluginResource(getClass().getName(), "/properties/datalist/UserDirectoryDataListBinder.json");
         Stream<JSONObject> stream2 = Optional.of(str)
                 .map(Try.onFunction(JSONArray::new))
                 .map(json -> JSONStream.of(json, Try.onBiFunction(JSONArray::getJSONObject)))

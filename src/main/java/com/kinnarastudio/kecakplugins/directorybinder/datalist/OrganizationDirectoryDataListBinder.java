@@ -1,4 +1,4 @@
-package com.kinnarastudio.kecakplugins.directoryformbinder.datalist;
+package com.kinnarastudio.kecakplugins.directorybinder.datalist;
 
 import org.joget.apps.app.service.AppUtil;
 import org.joget.apps.datalist.lib.FormRowDataListBinder;
@@ -14,7 +14,6 @@ import org.springframework.context.ApplicationContext;
 
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class OrganizationDirectoryDataListBinder extends FormRowDataListBinder {
     public final static String LABEL = "Organization Directory DataList Binder";
