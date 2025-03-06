@@ -4,7 +4,6 @@ import com.kinnarastudio.commons.Try;
 import com.kinnarastudio.kecakplugins.directorybinder.exception.PasswordException;
 import org.joget.apps.app.service.AppUtil;
 import org.joget.apps.form.model.*;
-import org.joget.commons.util.LogUtil;
 import org.joget.commons.util.SecurityUtil;
 import org.joget.commons.util.StringUtil;
 import org.joget.directory.dao.*;
@@ -117,6 +116,7 @@ public class UserDirectoryFormBinder extends FormBinder implements FormLoadBinde
         final RoleDao roleDao = (RoleDao) applicationContext.getBean("roleDao");
         final EmploymentDao employmentDao = (EmploymentDao) applicationContext.getBean("employmentDao");
         final EmploymentReportToDao employmentReportToDao = (EmploymentReportToDao) applicationContext.getBean("employmentReportToDao");
+        final OrganizationDao organizationDao = (OrganizationDao) applicationContext.getBean("organizationDao");
         final DepartmentDao departmentDao = (DepartmentDao) applicationContext.getBean("departmentDao");
         final Date now = new Date();
         final String currentUser = WorkflowUtil.getCurrentUsername();
@@ -148,14 +148,6 @@ public class UserDirectoryFormBinder extends FormBinder implements FormLoadBinde
                     final String departmentId = row.getProperty("departmentId");
                     final boolean isHod = "true".equals(row.getProperty("isHod"));
                     final String reportTo = row.getProperty("reportTo");
-
-                    Optional<Employment> optHod = Optional.ofNullable(userDao.getUserById("004658"))
-                            .map(User::getEmployments)
-                            .stream()
-                            .flatMap(Collection<Employment>::stream)
-                            .findFirst()
-                            .map(Employment::getDepartment)
-                            .map(Department::getHod);
 
                     final Optional<User> optUser = Optional.ofNullable(primaryKey)
                             .filter(s -> !s.isEmpty())
@@ -230,13 +222,13 @@ public class UserDirectoryFormBinder extends FormBinder implements FormLoadBinde
                         final Employment newEmployment = new Employment() {{
                             setUserId(user.getId());
 
-                            if (!organizationId.isEmpty()) {
-                                setOrganizationId(organizationId);
-                            }
+                            Optional.ofNullable(organizationId)
+                                    .map(organizationDao::getOrganization)
+                                    .ifPresent(this::setOrganization);
 
-                            if (!departmentId.isEmpty()) {
-                                setDepartmentId(departmentId);
-                            }
+                            Optional.ofNullable(departmentId)
+                                    .map(departmentDao::getDepartment)
+                                    .ifPresent(this::setDepartment);
                         }};
 
                         employmentDao.addEmployment(newEmployment);
@@ -254,14 +246,14 @@ public class UserDirectoryFormBinder extends FormBinder implements FormLoadBinde
                                     }}));
                         }
 
-//                        if (isHod) {
-//                            Optional.of(departmentId)
-//                                    .map(departmentDao::getDepartment)
-//                                    .ifPresent(d -> {
-//                                        d.setHod(newEmployment);
-//                                        departmentDao.updateDepartment(d);
-//                                    });
-//                        }
+                        if (isHod) {
+                            Optional.of(departmentId)
+                                    .map(departmentDao::getDepartment)
+                                    .ifPresent(d -> {
+                                        d.setHod(newEmployment);
+                                        departmentDao.updateDepartment(d);
+                                    });
+                        }
 
                     } else {
                         if (!organizationId.isEmpty()) {

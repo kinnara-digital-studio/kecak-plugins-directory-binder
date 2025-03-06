@@ -1,5 +1,6 @@
 package com.kinnarastudio.kecakplugins.directorybinder.form;
 
+import com.kinnarastudio.commons.Try;
 import org.joget.apps.app.dao.EnvironmentVariableDao;
 import org.joget.apps.app.service.AppUtil;
 import org.joget.apps.form.model.*;
@@ -122,7 +123,13 @@ public class DepartmentDirectoryFormBinder extends FormBinder implements FormLoa
 
                     return department;
                 })
-                .filter(d -> departmentDao.updateDepartment(d) || departmentDao.addDepartment(d))
+                .filter(d -> {
+                    if(departmentDao.getDepartment(d.getId()) != null) {
+                        return departmentDao.updateDepartment(d);
+                    } else {
+                        return departmentDao.addDepartment(d);
+                    }
+                })
                 .map(d -> (FormRow) new FormRow() {{
                     setProperty(fieldId, d.getId());
                     setProperty(fieldName, d.getName());
