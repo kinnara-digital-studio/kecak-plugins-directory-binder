@@ -27,7 +27,8 @@ import java.util.*;
  * @author Yonathan
  */
 public class UserOptionsBinder extends FormBinder implements FormLoadOptionsBinder,PluginWebSupport, FormAjaxOptionsBinder{
-    public final static String LABEL = "Directory User Options Binder";
+    public final static String LABEL = "Dir Binder - Directory User Options Binder";
+
     @Override
     public String getName() {
         return LABEL;
