@@ -1,8 +1,23 @@
 package com.kinnarastudio.kecakplugins.directorybinder.form;
 
+import java.util.Collection;
+import java.util.Optional;
+import java.util.ResourceBundle;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+
 import org.joget.apps.app.dao.EnvironmentVariableDao;
 import org.joget.apps.app.service.AppUtil;
-import org.joget.apps.form.model.*;
+import org.joget.apps.form.model.Element;
+import org.joget.apps.form.model.FormBinder;
+import org.joget.apps.form.model.FormData;
+import org.joget.apps.form.model.FormDeleteBinder;
+import org.joget.apps.form.model.FormLoadBinder;
+import org.joget.apps.form.model.FormLoadElementBinder;
+import org.joget.apps.form.model.FormRow;
+import org.joget.apps.form.model.FormRowSet;
+import org.joget.apps.form.model.FormStoreBinder;
+import org.joget.apps.form.model.FormStoreElementBinder;
 import org.joget.directory.dao.DepartmentDao;
 import org.joget.directory.dao.EmploymentDao;
 import org.joget.directory.dao.OrganizationDao;
@@ -13,12 +28,6 @@ import org.joget.directory.model.Organization;
 import org.joget.directory.model.User;
 import org.joget.plugin.base.PluginManager;
 import org.springframework.context.ApplicationContext;
-
-import java.util.Collection;
-import java.util.Optional;
-import java.util.ResourceBundle;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 public class DepartmentDirectoryFormBinder extends FormBinder implements FormLoadBinder, FormStoreBinder, FormLoadElementBinder,
         FormStoreElementBinder, FormDeleteBinder {
@@ -113,6 +122,12 @@ public class DepartmentDirectoryFormBinder extends FormBinder implements FormLoa
 
                     Optional.of(r.getProperty(fieldHod))
                             .filter(Predicate.not(String::isEmpty))
+                            .map(s -> {
+                                if (s.contains(" ")) {
+                                    s = s.substring(0, s.indexOf(" ")).trim();
+                                }
+                                return s;
+                            })
                             .map(userDao::getUserById)
                             .map(User::getEmployments)
                             .stream()

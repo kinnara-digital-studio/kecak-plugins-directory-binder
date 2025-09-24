@@ -1,5 +1,13 @@
 package com.kinnarastudio.kecakplugins.directorybinder.datalist;
 
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+import java.util.ResourceBundle;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import org.joget.apps.app.service.AppUtil;
 import org.joget.apps.datalist.lib.FormRowDataListBinder;
 import org.joget.apps.datalist.model.DataList;
@@ -11,9 +19,6 @@ import org.joget.apps.form.model.FormRow;
 import org.joget.directory.dao.OrganizationDao;
 import org.joget.plugin.base.PluginManager;
 import org.springframework.context.ApplicationContext;
-
-import java.util.*;
-import java.util.stream.Collectors;
 
 public class OrganizationDirectoryDataListBinder extends FormRowDataListBinder {
     public final static String LABEL = "Organization Directory DataList Binder";
@@ -37,7 +42,7 @@ public class OrganizationDirectoryDataListBinder extends FormRowDataListBinder {
 
                     // fill form data
                     optForm.map(f -> formDataDao.load(f, org.getId()))
-                            .map(FormRow::getCustomProperties)
+                            .map(row -> row.getCustomProperties())
                             .map(o -> (Map<String, Object>) o)
                             .map(Map::entrySet)
                             .stream()
