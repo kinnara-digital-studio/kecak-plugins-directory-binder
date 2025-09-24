@@ -122,12 +122,6 @@ public class DepartmentDirectoryFormBinder extends FormBinder implements FormLoa
 
                     Optional.of(r.getProperty(fieldHod))
                             .filter(Predicate.not(String::isEmpty))
-                            .map(s -> {
-                                if (s.contains(" ")) {
-                                    s = s.substring(0, s.indexOf(" ")).trim();
-                                }
-                                return s;
-                            })
                             .map(userDao::getUserById)
                             .map(User::getEmployments)
                             .stream()
