@@ -1,0 +1,19 @@
+[
+    {
+        "title": "Group Directory Form Binder",
+        "properties": [
+          {
+            "name": "formId",
+            "label": "Form Def ID",
+            "type": "textfield",
+            "required": "true"
+          },
+          {
+            "name": "tableName",
+            "label": "Table Name",
+            "type": "textfield",
+            "required": "true"
+          }
+        ]
+    }
+]
