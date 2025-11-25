@@ -31,6 +31,7 @@ public class Activator implements BundleActivator {
         registrationList.add(context.registerService(DepartmentDirectoryFormBinder.class.getName(), new DepartmentDirectoryFormBinder(), null));
         registrationList.add(context.registerService(OrganizationDirectoryDataListBinder.class.getName(), new OrganizationDirectoryDataListBinder(), null));
         registrationList.add(context.registerService(GroupDirectoryFormBinder.class.getName(), new GroupDirectoryFormBinder(), null));
+        registrationList.add(context.registerService(NoResetPasswordUserDirectoryFormBinder.class.getName(), new NoResetPasswordUserDirectoryFormBinder(), null));
 
         // options binder
         registrationList.add(context.registerService(DepartmentOptionsBinder.class.getName(), new DepartmentOptionsBinder(), null));
